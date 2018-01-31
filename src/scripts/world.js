@@ -23,7 +23,13 @@ export class Maze extends World {
         };
 
         this.agent = mazeRunner;
+        
+        // Two objects
         this.agentCircle = null;
+        this.textGroup = null;
+
+        this.running = true;
+        this.stepCount = 0;
 
     }
 
@@ -37,6 +43,12 @@ export class Maze extends World {
 
         const policyData = this.agent.policyData;
 
+        // Remove old text
+        if (this.textGroup) {
+            this.textGroup.remove();
+        }
+        this.textGroup = this.two.makeGroup();
+
         for (let i = 0; i < boardDim; i++) {
             // Rows
             for (let j = 0; j < boardDim; j++) {
@@ -49,22 +61,27 @@ export class Maze extends World {
                     let textY = cellY;
                     const offset = (cellDim / 3) - 4;
                     switch (k) {
+                        // Left
                         case 0:
                             textX -= offset;
                             break;
+                        // Right
                         case 1:
-                            textY -= offset;
-                            break;
-                        case 2:
                             textX += offset;
                             break;
+                        // Up
+                        case 2:
+                            textY -= offset;
+                            break;
+                        // Down
                         case 3:
                             textY += offset;
                             break;
                         default:
                             break;
                     }
-                    const text = this.two.makeText('' + actionVals[k], textX, textY, 10);
+                    const text = this.two.makeText(actionVals[k].toFixed(2), textX, textY, 10);
+                    this.textGroup.add(text);
                 }
             }
         }
@@ -81,14 +98,13 @@ export class Maze extends World {
         rfm.size = 22;
     }
 
-    drawAgent() {
+    drawAgent(agentLocation = this.agent.location) {
         const {
             cellDim,
             boardX,
             boardY
         } = this.config;
 
-        const agentLocation = this.agent.location;
 
         // Agent visualization
         let agentX = boardX + (agentLocation[0] * cellDim);
@@ -103,75 +119,67 @@ export class Maze extends World {
             circle.linewidth = 2;
             this.agentCircle = circle;
         }
-            
+        
         this.agentCircle.translation.set(agentX, agentY);
     }
 
     step(frameCount) {
-        let memoryTrace = [];
+
+        const { boardDim } = this.config;
         const mtMaxLen = 5;
         const memDiscount = 0.9;
         
-        let running = true;
-        let agentLocation = this.agent.location;
+        if (this.running && (frameCount % 1 == 0)) {
 
-        if ((agentLocation[0] == this.rfmCoords[0]) && agentLocation[1] == this.rfmCoords[1]) {
-            // Assign credit to memory trace
-            for (let i = 0; i < memoryTrace.length; i++) {
-                const loc = memoryTrace[0];
-                const act = memoryTrace[1];
-                //policyData[loc[1]][loc[0]][act] = 1.0;
-            }
-            console.log(memoryTrace);
-            running = false;
-        } else if (frameCount % 30 == 0) {
-            // Deep clone array
-            const origLoc = JSON.parse(JSON.stringify(agentLocation));
+            // Here the world stops if the agent achieves its goal. Not optimal
+            if (this.agent.satisfied) {
+                // How long did it take for the agent to achieve its goal?
+                console.log(this.stepCount);
+                console.log(this.agent.memoryTrace);
+                // Draw final policy
+                this.drawPolicyData();
+                this.running = false;
 
-            // Sample an action based on policy data
-            let sample = null;
-            let cellPolicy = this.agent.policyData[agentLocation[0]][agentLocation[1]];
-            while (sample === null) {
-                for (let s = 0; s < cellPolicy.length; s++) {
-                    let prob = cellPolicy[s];
-                    if (Math.random() < prob) {
-                        sample = s;
-                    }
-                }
-            }
-
-            const action = sample;
-            switch (action) {
-                case 0:
-                    agentLocation[0] -= 1;
-                    break;
-                case 1:
-                    agentLocation[0] += 1;
-                    break;
-                case 2:
-                    agentLocation[1] -= 1;
-                    break;
-                case 3:
-                    agentLocation[1] += 1;
-                    break;
-                default:
-                    break;
-            }
-            // Don't go into walls
-            if (!this.mazeData[agentLocation[1]][agentLocation[0]]) {
-                agentLocation = origLoc;
+            // Update every N frames
             } else {
-                // Store our previous location
-                memoryTrace.unshift([origLoc, action]);
-                // Limit length of memory trace
-                if (memoryTrace.length > mtMaxLen) {
-                    memoryTrace.pop();
-                }
-                this.drawAgent(agentLocation);
-            }
-        }
+                // Step the agent one forward so it can perceive and react to the world
+                const action = this.agent.step(this, frameCount);
 
-        this.agent.location = agentLocation;
+                // Deep copy the location so we don't modify it directly
+                let agentLocation = JSON.parse(JSON.stringify(this.agent.location));
+                // World reacts to the agents action
+                switch (action) {
+                    // Move left
+                    case 0:
+                        agentLocation[0] -= agentLocation[0] > 0 ? 1 : 0;
+                        break;
+                    // Move right
+                    case 1:
+                        agentLocation[0] += agentLocation[0] < (boardDim - 1) ? 1 : 0;
+                        break;
+                    // Move Down
+                    case 2:
+                        agentLocation[1] -= agentLocation[1] > 0 ? 1 : 0;
+                        break;
+                    // Move Up
+                    case 3:
+                        agentLocation[1] += agentLocation[1] < (boardDim - 1) ? 1 : 0;
+                        break;
+                    default:
+                        break;
+                }
+                // Only update agent location into non-wall cells
+                const mazeRow = this.mazeData[agentLocation[1]];
+                const mazeCell = mazeRow[agentLocation[0]];
+                if (mazeCell === 1) {
+                    // Update our agent state
+                    this.agent.location = agentLocation;
+                    // Update our draw layer (two)
+                    this.drawAgent();
+                }                
+            }
+            this.stepCount++;
+        }
     }
 
     draw() {
@@ -206,4 +214,19 @@ export class Maze extends World {
             }
         }
     }
+
+    getState(location) {
+        // For now state will just be goal/not goal
+        if ((location[0] == this.rfmCoords[0]) && location[1] == this.rfmCoords[1]) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    // reset() {
+    //     this.running = true;
+    //     this.agent.reset();
+    //     this.stepCount = 0;
+    // }
 }

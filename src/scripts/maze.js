@@ -33,7 +33,7 @@ import { MazeRunner } from './agent.js';
     ];
 
 
-    const rfmCoords = [7, 6];
+    const rfmCoords = [7, 6]; // [column, row] indexed at 0
     const agentLocation = [0, 2];
     const mazeRunner = new MazeRunner(agentLocation, mazeData);
     const maze = new Maze(two, mazeData, rfmCoords, mazeRunner);
@@ -42,8 +42,37 @@ import { MazeRunner } from './agent.js';
     maze.drawReinforcement();
     maze.drawAgent();
 
-    two.bind('update', (frameCount) => {
-        maze.step(frameCount);
-    }).play();
+    const draw = false;
+
+    if (draw) {
+        const trialCount = 10;
+        two.bind('update', (frameCount) => {
+            maze.step(frameCount);
+        }).play();           
+    } else {
+        let frameCount = 0;
+        while (maze.running) {
+            maze.step(frameCount);
+            frameCount++;
+        }
+        two.update();        
+    }
+
+    // for (var i = 0; i < trialCount; i++) {
+    //     if (draw) {
+    //         two.bind('update', (frameCount) => {
+    //             maze.step(frameCount);
+    //         }).play();        
+    //     } else {
+    //         let frameCount = 0;
+    //         while (maze.running) {
+    //             maze.step(frameCount);
+    //             frameCount++;
+    //         }
+    //         stepCounts.push(frameCount);
+    //         maze.reset();
+    //         two.update();
+    //     }        
+    // }
 
 })();
