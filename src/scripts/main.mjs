@@ -2,14 +2,9 @@ import { Maze } from './world.mjs';
 import { MazeRunner } from './agent.mjs';
 import { MazeView } from './view.mjs';
 
-// Here we would like to import Two as a module but instead assume it exists in the global scope.
-
 (function() {
   
-    // Make an instance of two and place it on the page.
-    var elem = document.getElementById('draw-shapes');
-    var params = { width: 700, height: 700 };
-    var two = new Two(params).appendTo(elem);
+    const container = document.getElementById('draw-shapes');
 
     const maze1 = [
         [0,0,0,0,0,0,0,0],
@@ -37,8 +32,9 @@ import { MazeView } from './view.mjs';
     const goalCoords = [7, 6]; // [column, row] indexed at 0
     const initialAgentLocation = [0, 2];
 
-    const mazeRunner = new MazeRunner(maze1, initialAgentLocation);
-    const maze = new Maze(maze1, goalCoords, mazeRunner);
+    const activeMaze = maze1;
+    const mazeRunner = new MazeRunner(activeMaze, initialAgentLocation);
+    const maze = new Maze(activeMaze, goalCoords, mazeRunner);
 
     const mazeStyles = {
         cellDim: 80,
@@ -59,47 +55,25 @@ import { MazeView } from './view.mjs';
         linewidth: 2
     };
 
-    const mazeView = new MazeView(two, maze, mazeStyles, agentStyles);
+    const mazeView = new MazeView(container, maze, mazeStyles, agentStyles);
     mazeView.initialize();
 
-    const draw = true;
-    let once = false;
-    if (draw) {
-        const trialCount = 10;
-        two.bind('update', (frameCount) => {
-            if (maze.running) {
-                maze.step(frameCount);
-                mazeView.update();                
-            } else if (!once) {
-                mazeView.update(true);
-                once = true;
-            }
-        }).play();           
-    } else {
-        let frameCount = 0;
-        while (maze.running) {
-            maze.step(frameCount);
-            frameCount++;
-        }
-        mazeView.update(true);
-        two.update();        
-    }
+    const draw = false;
+    mazeView.play(draw);
 
-    // for (var i = 0; i < trialCount; i++) {
-    //     if (draw) {
-    //         two.bind('update', (frameCount) => {
-    //             maze.step(frameCount);
-    //         }).play();        
-    //     } else {
-    //         let frameCount = 0;
-    //         while (maze.running) {
-    //             maze.step(frameCount);
-    //             frameCount++;
-    //         }
-    //         stepCounts.push(frameCount);
-    //         maze.reset();
-    //         two.update();
-    //     }        
-    // }
+
+    // Controls
+    const controls = document.getElementById('controls-container');
+    const button = document.createElement("div");
+    button.className = "button";
+    const buttonText = document.createTextNode("Replay");
+    button.appendChild(buttonText);
+    button.addEventListener('click', (e) => {
+        maze.reset();
+        mazeView.play(draw);
+    });
+    controls.appendChild(button);
+
+
 
 })();

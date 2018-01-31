@@ -1,8 +1,10 @@
-export class MazeView {
-    constructor(two, maze, config, agentStyles) {
+import Two from 'https://cdn.rawgit.com/jonobr1/two.js/dev/build/two.module.js';
 
-        // Instatiated and bound instance of Two
-        this.two = two;
+export class MazeView {
+    constructor(container, maze, config, agentStyles) {
+
+        const params = { width: 700, height: 700 };
+        this.two = new Two(params).appendTo(container);
 
         // Two objects
         this.agentCircle = null;
@@ -179,5 +181,29 @@ export class MazeView {
         }
         const agentLocation = this.agent.getCurrentLocation();
         this.drawAgent(agentLocation);
+    }
+
+    play(draw = true) {
+        let once = false;
+        let frameCount = 0;
+        if (draw) {
+            this.two.bind('update', (frameCount) => {
+                if (this.maze.running) {
+                    this.maze.step(frameCount);
+                    this.update();                
+                } else if (!once) {
+                    this.update(true);
+                    once = true;
+                }
+            }).play();
+        } else {
+            while (this.maze.running) {
+                this.maze.step(frameCount);
+                this.update();
+                frameCount++;
+            }
+            this.update(true);
+            this.two.update();
+        }
     }
 }

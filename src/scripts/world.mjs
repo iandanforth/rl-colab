@@ -14,11 +14,6 @@ export class Maze extends World {
         this.running = true;
         this.stepCount = 0;
 
-        // VIEW to extract
-        // Two objects
-        this.agentCircle = null;
-        this.textGroup = null;
-
         this.config = {
             cellDim: 80,
             boardDim: 8,
@@ -113,9 +108,9 @@ export class Maze extends World {
         }
     }
 
-    // reset() {
-    //     this.running = true;
-    //     this.agent.reset();
-    //     this.stepCount = 0;
-    // }
+    reset() {
+        this.running = true;
+        this.agent.reset();
+        this.stepCount = 0;
+    }
 }
