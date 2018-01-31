@@ -1,6 +1,6 @@
-import { Maze } from './world.js';
-import { MazeRunner } from './agent.js';
-import { MazeView } from './view.js';
+import { Maze } from './world.mjs';
+import { MazeRunner } from './agent.mjs';
+import { MazeView } from './view.mjs';
 
 // Here we would like to import Two as a module but instead assume it exists in the global scope.
 

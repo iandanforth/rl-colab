@@ -12,6 +12,8 @@ class MyHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         self.send_header("Pragma", "no-cache")
         self.send_header("Expires", "0")
 
+MyHTTPRequestHandler.extensions_map['.mjs'] = 'application/javascript'
+
 
 if __name__ == '__main__':
     SimpleHTTPServer.test(HandlerClass=MyHTTPRequestHandler)
