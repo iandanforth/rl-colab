@@ -33,7 +33,10 @@ export class MazeRunner extends Agent {
             let policyRow = [];
             for (let j = 0; j < mazeRow.length; j++) {
                 let mazeCell = mazeRow[j];
-                let policyCell = [0.25, 0.25, 0.25, 0.25];
+                let policyCell = null;
+                if (mazeCell === 1) {
+                    policyCell = [0.25, 0.25, 0.25, 0.25];
+                }
                 policyRow.push(policyCell); 
             }
             policyData.push(policyRow);

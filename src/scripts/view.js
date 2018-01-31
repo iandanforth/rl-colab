@@ -37,7 +37,8 @@ export class MazeView {
             boardX,
             boardY,
             cellColorA,
-            cellColorB
+            cellColorB,
+            cellStroke
         } = this.config;
 
         for (let i = 0; i < boardDim; i++) {
@@ -59,19 +60,24 @@ export class MazeView {
                 } else {
                     rect.fill = cellColorB;
                 }
+
+                rect.stroke = cellStroke;
             }
         }
     }
 
     drawReinforcement(goalCoords) {
         const {
-            cellDim
+            cellDim,
+            fontFamily,
+            fontSize
         } = this.config;
 
         const goalX = (goalCoords[0] * cellDim) + cellDim / 2;
         const goalY = (goalCoords[1] * cellDim) + cellDim / 2;
-        const goal = this.two.makeText('+1', goalX, goalY);
-        goal.size = 22;
+        const goalText = this.two.makeText('+1', goalX, goalY);
+        goalText.size = 20;
+        goalText.family = fontFamily;
     }
 
     drawAgent(agentLocation) {
@@ -104,7 +110,9 @@ export class MazeView {
             cellDim,
             boardDim,
             boardX,
-            boardY
+            boardY,
+            fontFamily,
+            fontSize
         } = this.config;
 
         // Remove old text
@@ -120,32 +128,36 @@ export class MazeView {
                 let cellY = boardY + (cellDim * i);
 
                 const actionVals = agentPolicy[i][j];
-                for (let k = 0; k < 4; k++) {
-                    let textX = cellX;
-                    let textY = cellY;
-                    const offset = (cellDim / 3) - 4;
-                    switch (k) {
-                        // Left
-                        case 0:
-                            textX -= offset;
-                            break;
-                        // Right
-                        case 1:
-                            textX += offset;
-                            break;
-                        // Up
-                        case 2:
-                            textY -= offset;
-                            break;
-                        // Down
-                        case 3:
-                            textY += offset;
-                            break;
-                        default:
-                            break;
+                if (actionVals !== null) {                
+                    for (let k = 0; k < 4; k++) {
+                        let textX = cellX;
+                        let textY = cellY;
+                        const offset = (cellDim / 3) - 4;
+                        switch (k) {
+                            // Left
+                            case 0:
+                                textX -= offset;
+                                break;
+                            // Right
+                            case 1:
+                                textX += offset;
+                                break;
+                            // Up
+                            case 2:
+                                textY -= offset;
+                                break;
+                            // Down
+                            case 3:
+                                textY += offset;
+                                break;
+                            default:
+                                break;
+                        }
+                        const text = this.two.makeText(actionVals[k].toFixed(2), textX, textY);
+                        text.size = fontSize;
+                        text.family = fontFamily;
+                        this.textGroup.add(text);
                     }
-                    const text = this.two.makeText(actionVals[k].toFixed(2), textX, textY, 10);
-                    this.textGroup.add(text);
                 }
             }
         }
