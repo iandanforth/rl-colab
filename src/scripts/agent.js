@@ -5,10 +5,11 @@ class Agent {
 
 
 export class MazeRunner extends Agent {
-    constructor(location, mazeData) {
+    constructor(mazeData, location) {
         super();
 
         this._origLoc = JSON.parse(JSON.stringify(location));
+        this.location = location;
         this.mazeData = mazeData;
         this.maxMemLen = 5;
         // See https://www.desmos.com/calculator/ntvs7pp8f3
@@ -18,6 +19,10 @@ export class MazeRunner extends Agent {
         this.actionMap = ["Left", "Right", "Up", "Down"];
         this.reset();
         
+    }
+
+    getCurrentPolicy() {
+        return this.policyData;
     }
 
     getDefaultPolicy(mazeData){
@@ -37,6 +42,10 @@ export class MazeRunner extends Agent {
         return policyData;
     }
 
+    getCurrentLocation() {
+        return this.location;
+    }
+
     step(world, frameCount) {
         // Where was I?
         // const prevState = memoryTrace[0];
@@ -52,18 +61,19 @@ export class MazeRunner extends Agent {
         // Am I satisfied with where I am?
         if (!this.satisfied) {
             // Not yet, Am I at my goal?
-            const worldState = world.getState(location);
-            if (worldState === 1) {
+            const worldState = world.getStateAtLocation(location);
+            const [goalAchieved, rewardSignal] = this.interpret(worldState);
+            if (goalAchieved === true) {
                 // Yay! I'm satisfied
                 this.satisfied = true;
                 // Reinforce what I did to get here
-                this.learnFromSuccess();
+                this.reinforce(rewardSignal);
 
             } else {
                 // Not at goal, need to act
                 const action = this.getAction(location);
                 this.updateMemory(location, action);
-                console.log(location, this.actionMap[action]);
+                // console.log(location, this.actionMap[action]);
                 return action;
             }
         }
@@ -116,7 +126,25 @@ export class MazeRunner extends Agent {
         }
     }
 
-    learnFromSuccess() {
+    interpret(worldState) {
+        // Translate our perception of the world into saliency values
+        // Start with a direct mapping.
+        // Later the reward signal could be reduced due to being satiated
+        // or because its an intermediate reward
+        let goalAchieved = false;
+        let rewardSignal = 0;
+        if (worldState === 1) {
+            goalAchieved = true;
+            rewardSignal = 1;
+        }
+        return [goalAchieved, rewardSignal];
+
+    }
+
+    reinforce(signalStrength) {
+        // Modify our policy by assigning credit to actions leading up
+        // to the reward signal. Those actions should now occur more
+        // frequently in subsequent trials.
         const traceLen = this.memoryTrace.length;
         // Go from back to front where the back is the most recent
         for (var i = traceLen - 1; i >= 0; i--) {
@@ -128,8 +156,10 @@ export class MazeRunner extends Agent {
             // Increase the frequency of selected action
             let prevValue = cellPolicy[action];
             let exp = (traceLen - 1) - i;
-            // Discount the increment by how many steps from the goal it was
-            let valUpdate = parseFloat((this.learningRate * Math.pow(this.memDecay, exp)).toFixed(2));
+            // Discount by the signal strength
+            let valUpdate = this.learningRate * signalStrength;
+            // Further discount the increment by how many steps from the goal it was
+            valUpdate = parseFloat((valUpdate * Math.pow(this.memDecay, exp)).toFixed(2));
             let newValue = prevValue + valUpdate;
             cellPolicy[action] = newValue;
             this.norm(cellPolicy);

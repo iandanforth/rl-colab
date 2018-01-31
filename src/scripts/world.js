@@ -4,14 +4,20 @@ export class World {
 
 
 export class Maze extends World {
-    constructor(two, mazeData, rfmCoords, mazeRunner) {
+    constructor(mazeData, goalCoords, mazeRunner) {
         super();
-        // Instatiated and bound instance of Two
-        this.two = two;
 
-        // Array of arrays defining an nxn grid world
+        // Array of arrays defining an NxN grid world
         this.mazeData = mazeData;
-        this.rfmCoords = rfmCoords;
+        this.goalCoords = goalCoords;        
+        this.agent = mazeRunner;
+        this.running = true;
+        this.stepCount = 0;
+
+        // VIEW to extract
+        // Two objects
+        this.agentCircle = null;
+        this.textGroup = null;
 
         this.config = {
             cellDim: 80,
@@ -22,110 +28,30 @@ export class Maze extends World {
             cellColorB: 'white'
         };
 
-        this.agent = mazeRunner;
-        
-        // Two objects
-        this.agentCircle = null;
-        this.textGroup = null;
-
-        this.running = true;
-        this.stepCount = 0;
-
     }
 
-    drawPolicyData() {
-        const {
-            cellDim,
-            boardDim,
-            boardX,
-            boardY
-        } = this.config;
-
-        const policyData = this.agent.policyData;
-
-        // Remove old text
-        if (this.textGroup) {
-            this.textGroup.remove();
-        }
-        this.textGroup = this.two.makeGroup();
-
-        for (let i = 0; i < boardDim; i++) {
-            // Rows
-            for (let j = 0; j < boardDim; j++) {
-                let cellX = boardX + (cellDim * j);
-                let cellY = boardY + (cellDim * i);
-
-                const actionVals = policyData[i][j];
-                for (let k = 0; k < 4; k++) {
-                    let textX = cellX;
-                    let textY = cellY;
-                    const offset = (cellDim / 3) - 4;
-                    switch (k) {
-                        // Left
-                        case 0:
-                            textX -= offset;
-                            break;
-                        // Right
-                        case 1:
-                            textX += offset;
-                            break;
-                        // Up
-                        case 2:
-                            textY -= offset;
-                            break;
-                        // Down
-                        case 3:
-                            textY += offset;
-                            break;
-                        default:
-                            break;
-                    }
-                    const text = this.two.makeText(actionVals[k].toFixed(2), textX, textY, 10);
-                    this.textGroup.add(text);
-                }
-            }
-        }
+    getAgent() {
+        return this.agent;
     }
 
-    drawReinforcement() {
-        const {
-            cellDim
-        } = this.config;
-
-        const rfmX = (this.rfmCoords[0] * cellDim) + cellDim / 2;
-        const rfmY = (this.rfmCoords[1] * cellDim) + cellDim / 2;
-        const rfm = this.two.makeText('+1', rfmX, rfmY);
-        rfm.size = 22;
+    getState() {
+        const state = {
+            mazeData: this.mazeData,
+            stepCount: this.stepCount,
+            goalCoords: this.goalCoords,
+            running: this.running
+        };
+        return state
     }
 
-    drawAgent(agentLocation = this.agent.location) {
-        const {
-            cellDim,
-            boardX,
-            boardY
-        } = this.config;
+    setState(state) {
+        const { mazeData, stepCount, goalCoords, running } = state;
 
-
-        // Agent visualization
-        let agentX = boardX + (agentLocation[0] * cellDim);
-        let agentY = boardY + (agentLocation[1] * cellDim);
-
-        if (!this.agentCircle) {
-            const circle = this.two.makeCircle(agentX, agentY, (cellDim / 2) - 10);
-
-            // The object returned has many stylable properties:
-            circle.fill = 'rgb(0, 200, 255)';
-            circle.stroke = 'orangered'; // Accepts all valid css color
-            circle.linewidth = 2;
-            this.agentCircle = circle;
-        }
-        
-        this.agentCircle.translation.set(agentX, agentY);
     }
 
     step(frameCount) {
 
-        const { boardDim } = this.config;
+        const boardDim = this.mazeData.length;
         const mtMaxLen = 5;
         const memDiscount = 0.9;
         
@@ -136,8 +62,6 @@ export class Maze extends World {
                 // How long did it take for the agent to achieve its goal?
                 console.log(this.stepCount);
                 console.log(this.agent.memoryTrace);
-                // Draw final policy
-                this.drawPolicyData();
                 this.running = false;
 
             // Update every N frames
@@ -174,50 +98,15 @@ export class Maze extends World {
                 if (mazeCell === 1) {
                     // Update our agent state
                     this.agent.location = agentLocation;
-                    // Update our draw layer (two)
-                    this.drawAgent();
                 }                
             }
             this.stepCount++;
         }
     }
 
-    draw() {
-        const {
-            cellDim,
-            boardDim,
-            boardX,
-            boardY,
-            cellColorA,
-            cellColorB
-        } = this.config;
-
-        for (let i = 0; i < boardDim; i++) {
-            // Rows
-            for (let j = 0; j < boardDim; j++) {
-                // Columns
-                let cellX = boardX + (cellDim * j);
-                let cellY = boardY + (cellDim * i);
-                let rect = this.two.makeRectangle(
-                    cellX,
-                    cellY,
-                    cellDim,
-                    cellDim
-                );
-
-                // Base pattern
-                if (this.mazeData[i][j] == 0) {
-                    rect.fill = cellColorA;
-                } else {
-                    rect.fill = cellColorB;
-                }
-            }
-        }
-    }
-
-    getState(location) {
+    getStateAtLocation(location) {
         // For now state will just be goal/not goal
-        if ((location[0] == this.rfmCoords[0]) && location[1] == this.rfmCoords[1]) {
+        if ((location[0] == this.goalCoords[0]) && location[1] == this.goalCoords[1]) {
             return 1;
         } else {
             return 0;

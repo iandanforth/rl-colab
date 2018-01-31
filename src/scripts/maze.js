@@ -1,5 +1,6 @@
 import { Maze } from './world.js';
 import { MazeRunner } from './agent.js';
+import { MazeView } from './view.js';
 
 // Here we would like to import Two as a module but instead assume it exists in the global scope.
 
@@ -20,34 +21,41 @@ import { MazeRunner } from './agent.js';
         [0,1,1,1,1,0,1,1],
         [0,0,0,0,0,0,0,0]
     ];
-  
-    const policyData = [
-        [[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25]],
-        [[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25]],
-        [[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25]],
-        [[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25]],
-        [[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25]],
-        [[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25]],
-        [[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0,0,0,0]],
-        [[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25],[0.25,0.25,0.25,0.25]]
-    ];
 
+    const goalCoords = [7, 6]; // [column, row] indexed at 0
+    const initialAgentLocation = [0, 2];
 
-    const rfmCoords = [7, 6]; // [column, row] indexed at 0
-    const agentLocation = [0, 2];
-    const mazeRunner = new MazeRunner(agentLocation, mazeData);
-    const maze = new Maze(two, mazeData, rfmCoords, mazeRunner);
-    maze.draw();
-    maze.drawPolicyData();
-    maze.drawReinforcement();
-    maze.drawAgent();
+    const mazeRunner = new MazeRunner(mazeData, initialAgentLocation);
+    const maze = new Maze(mazeData, goalCoords, mazeRunner);
 
-    const draw = false;
+    const mazeStyles = {
+        cellDim: 80,
+        boardDim: 8,
+        boardX: 40,
+        boardY: 40,
+        cellColorA: 'black',
+        cellColorB: 'white'
+    };
+
+    const agentStyles = {
+        relSize: 0.75,
+        fill: 'rgb(0, 200, 255)',
+        stroke: 'orangered',
+        linewidth: 2
+    };
+
+    const mazeView = new MazeView(two, maze, mazeStyles, agentStyles);
+    mazeView.initialize();
+
+    const draw = true   ;
 
     if (draw) {
         const trialCount = 10;
         two.bind('update', (frameCount) => {
-            maze.step(frameCount);
+            if (maze.running) {
+                maze.step(frameCount);
+                mazeView.update();                
+            }
         }).play();           
     } else {
         let frameCount = 0;
@@ -55,6 +63,7 @@ import { MazeRunner } from './agent.js';
             maze.step(frameCount);
             frameCount++;
         }
+        mazeView.update(true);
         two.update();        
     }
 
