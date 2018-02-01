@@ -1,5 +1,5 @@
-import { Maze } from './world.mjs';
-import { MazeRunner } from './agent.mjs';
+import { Maze } from './maze.mjs';
+import { MazeRunner } from './mazerunner.mjs';
 import { MazeView } from './view.mjs';
 
 (function() {
@@ -32,7 +32,7 @@ import { MazeView } from './view.mjs';
     const goalCoords = [7, 6]; // [column, row] indexed at 0
     const initialAgentLocation = [0, 2];
 
-    const activeMaze = maze1;
+    const activeMaze = maze2;
     const mazeRunner = new MazeRunner(activeMaze, initialAgentLocation);
     const maze = new Maze(activeMaze, goalCoords, mazeRunner);
 
@@ -58,7 +58,7 @@ import { MazeView } from './view.mjs';
     const mazeView = new MazeView(container, maze, mazeStyles, agentStyles);
     mazeView.initialize();
 
-    const draw = false;
+    const draw = true;
     mazeView.play(draw);
 
 

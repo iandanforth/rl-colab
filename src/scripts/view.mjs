@@ -29,7 +29,7 @@ export class MazeView {
         this.maze = maze;
 
         // Reference to our agent
-        this.agent = maze.getAgent();
+        this.agent = maze.agent;
     }
 
     drawMaze(mazeData) {
@@ -166,7 +166,7 @@ export class MazeView {
     }
 
     initialize() {
-        const mazeState = this.maze.getState();
+        const mazeState = this.maze.state;
         this.drawMaze(mazeState.mazeData);
         this.drawReinforcement(mazeState.goalCoords);
         const agentPolicy = this.agent.getCurrentPolicy();
