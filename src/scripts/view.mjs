@@ -3,36 +3,169 @@ import Two from 'https://cdn.rawgit.com/jonobr1/two.js/dev/build/two.module.js';
 export class MazeView {
     constructor(container, maze, config, agentStyles) {
 
-        const params = { width: 700, height: 700 };
-        this.two = new Two(params).appendTo(container);
+        const params = {
+            width: 700,
+            height: 700
+        };
+        this._two = new Two(params).appendTo(container);
 
         // Two objects
-        this.agentCircle = null;
-        this.textGroup = null;
+        this._agentCircle = null;
+        this._textGroup = null;
 
         if (config) {
-            this.config = config;
+            this._config = config;
         } else {
-            this.config = {
+            this._config = {
                 cellDim: 80,
                 boardDim: 8,
                 boardX: 40,
                 boardY: 40,
                 cellColorA: 'black',
                 cellColorB: 'white'
-            };            
+            };
         }
 
-        this.agentStyles = agentStyles;
+        this._agentStyles = agentStyles;
 
         // Reference to our maze object
-        this.maze = maze;
+        this._maze = maze;
 
         // Reference to our agent
-        this.agent = maze.agent;
+        this._agent = maze.agent;
+    }
+    //***********************************************************************//
+    // Public API
+
+    initialize() {
+        const mazeState = this._maze.state;
+        this._drawMaze(mazeState.mazeData);
+        this._drawReinforcement(mazeState.goalCoords);
+        const agentPolicy = this._agent.policy;
+        this._drawAgentPolicy(agentPolicy);
+        this.update();
     }
 
-    drawMaze(mazeData) {
+    update(redrawPolicy = false) {
+        if (redrawPolicy) {
+            const agentPolicy = this._agent.policy;
+            this._drawAgentPolicy(agentPolicy);
+        }
+        const agentLocation = this._agent.location;
+        this._drawAgent(agentLocation);
+    }
+
+    play(draw = true) {
+        let once = false;
+        let frameCount = 0;
+        if (draw) {
+            this._two.bind('update', (frameCount) => {
+                if (this._maze.running) {
+                    this._maze.step(frameCount);
+                    this.update();
+                } else if (!once) {
+                    this.update(true);
+                    once = true;
+                }
+            }).play();
+        } else {
+            while (this._maze.running) {
+                this._maze.step(frameCount);
+                this.update();
+                frameCount++;
+            }
+            this.update(true);
+            this._two.update();
+        }
+    }
+
+    //***********************************************************************//
+    // Private Methods
+
+    _drawAgent(agentLocation) {
+        const {
+            cellDim,
+            boardX,
+            boardY
+        } = this._config;
+
+        // Agent visualization
+        let agentX = boardX + (agentLocation[0] * cellDim);
+        let agentY = boardY + (agentLocation[1] * cellDim);
+
+        if (!this._agentCircle) {
+            const radius = (cellDim / 2) * this._agentStyles.relSize;
+            const circle = this._two.makeCircle(agentX, agentY, radius);
+
+            // The object returned has many stylable properties:
+            circle.fill = this._agentStyles.fill;
+            circle.stroke = this._agentStyles.stroke;
+            circle.linewidth = this._agentStyles.linewidth;
+            this._agentCircle = circle;
+        }
+
+        this._agentCircle.translation.set(agentX, agentY);
+    }
+
+    _drawAgentPolicy(agentPolicy) {
+        const {
+            cellDim,
+            boardDim,
+            boardX,
+            boardY,
+            fontFamily,
+            fontSize
+        } = this._config;
+
+        // Remove old text
+        if (this._textGroup) {
+            this._textGroup.remove();
+        }
+        this._textGroup = this._two.makeGroup();
+
+        for (let i = 0; i < boardDim; i++) {
+            // Rows
+            for (let j = 0; j < boardDim; j++) {
+                let cellX = boardX + (cellDim * j);
+                let cellY = boardY + (cellDim * i);
+
+                const actionVals = agentPolicy[i][j];
+                if (actionVals !== null) {
+                    for (let k = 0; k < 4; k++) {
+                        let textX = cellX;
+                        let textY = cellY;
+                        const offset = (cellDim / 3) - 4;
+                        switch (k) {
+                            // Left
+                            case 0:
+                                textX -= offset;
+                                break;
+                                // Right
+                            case 1:
+                                textX += offset;
+                                break;
+                                // Up
+                            case 2:
+                                textY -= offset;
+                                break;
+                                // Down
+                            case 3:
+                                textY += offset;
+                                break;
+                            default:
+                                break;
+                        }
+                        const text = this._two.makeText(actionVals[k].toFixed(2), textX, textY);
+                        text.size = fontSize;
+                        text.family = fontFamily;
+                        this._textGroup.add(text);
+                    }
+                }
+            }
+        }
+    }
+
+    _drawMaze(mazeData) {
         const {
             cellDim,
             boardDim,
@@ -41,7 +174,7 @@ export class MazeView {
             cellColorA,
             cellColorB,
             cellStroke
-        } = this.config;
+        } = this._config;
 
         for (let i = 0; i < boardDim; i++) {
             // Rows
@@ -49,7 +182,7 @@ export class MazeView {
                 // Columns
                 let cellX = boardX + (cellDim * j);
                 let cellY = boardY + (cellDim * i);
-                let rect = this.two.makeRectangle(
+                let rect = this._two.makeRectangle(
                     cellX,
                     cellY,
                     cellDim,
@@ -68,142 +201,18 @@ export class MazeView {
         }
     }
 
-    drawReinforcement(goalCoords) {
+    _drawReinforcement(goalCoords) {
         const {
             cellDim,
             fontFamily,
             fontSize
-        } = this.config;
+        } = this._config;
 
         const goalX = (goalCoords[0] * cellDim) + cellDim / 2;
         const goalY = (goalCoords[1] * cellDim) + cellDim / 2;
-        const goalText = this.two.makeText('+1', goalX, goalY);
+        const goalText = this._two.makeText('+1', goalX, goalY);
         goalText.size = 20;
         goalText.family = fontFamily;
     }
 
-    drawAgent(agentLocation) {
-        const {
-            cellDim,
-            boardX,
-            boardY
-        } = this.config;
-
-        // Agent visualization
-        let agentX = boardX + (agentLocation[0] * cellDim);
-        let agentY = boardY + (agentLocation[1] * cellDim);
-
-        if (!this.agentCircle) {
-            const radius = (cellDim / 2) * this.agentStyles.relSize;
-            const circle = this.two.makeCircle(agentX, agentY, radius   );
-
-            // The object returned has many stylable properties:
-            circle.fill = this.agentStyles.fill;
-            circle.stroke = this.agentStyles.stroke;
-            circle.linewidth = this.agentStyles.linewidth;
-            this.agentCircle = circle;
-        }
-        
-        this.agentCircle.translation.set(agentX, agentY);
-    }
-
-    drawAgentPolicy(agentPolicy) {
-        const {
-            cellDim,
-            boardDim,
-            boardX,
-            boardY,
-            fontFamily,
-            fontSize
-        } = this.config;
-
-        // Remove old text
-        if (this.textGroup) {
-            this.textGroup.remove();
-        }
-        this.textGroup = this.two.makeGroup();
-
-        for (let i = 0; i < boardDim; i++) {
-            // Rows
-            for (let j = 0; j < boardDim; j++) {
-                let cellX = boardX + (cellDim * j);
-                let cellY = boardY + (cellDim * i);
-
-                const actionVals = agentPolicy[i][j];
-                if (actionVals !== null) {                
-                    for (let k = 0; k < 4; k++) {
-                        let textX = cellX;
-                        let textY = cellY;
-                        const offset = (cellDim / 3) - 4;
-                        switch (k) {
-                            // Left
-                            case 0:
-                                textX -= offset;
-                                break;
-                            // Right
-                            case 1:
-                                textX += offset;
-                                break;
-                            // Up
-                            case 2:
-                                textY -= offset;
-                                break;
-                            // Down
-                            case 3:
-                                textY += offset;
-                                break;
-                            default:
-                                break;
-                        }
-                        const text = this.two.makeText(actionVals[k].toFixed(2), textX, textY);
-                        text.size = fontSize;
-                        text.family = fontFamily;
-                        this.textGroup.add(text);
-                    }
-                }
-            }
-        }
-    }
-
-    initialize() {
-        const mazeState = this.maze.state;
-        this.drawMaze(mazeState.mazeData);
-        this.drawReinforcement(mazeState.goalCoords);
-        const agentPolicy = this.agent.getCurrentPolicy();
-        this.drawAgentPolicy(agentPolicy);
-        this.update();
-    }
-
-    update(redrawPolicy = false) {
-        if (redrawPolicy) {
-            const agentPolicy = this.agent.getCurrentPolicy();
-            this.drawAgentPolicy(agentPolicy);
-        }
-        const agentLocation = this.agent.getCurrentLocation();
-        this.drawAgent(agentLocation);
-    }
-
-    play(draw = true) {
-        let once = false;
-        let frameCount = 0;
-        if (draw) {
-            this.two.bind('update', (frameCount) => {
-                if (this.maze.running) {
-                    this.maze.step(frameCount);
-                    this.update();                
-                } else if (!once) {
-                    this.update(true);
-                    once = true;
-                }
-            }).play();
-        } else {
-            while (this.maze.running) {
-                this.maze.step(frameCount);
-                this.update();
-                frameCount++;
-            }
-            this.update(true);
-            this.two.update();
-        }
-    }
 }

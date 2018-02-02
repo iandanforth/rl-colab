@@ -1,7 +1,7 @@
 export class Maze {
     constructor(mazeData, goalCoords, mazeRunner) {
         this._mazeData = mazeData; // Array of arrays defining an NxN grid world
-        this._goalCoords = goalCoords;        
+        this._goalCoords = goalCoords;
         this._agent = mazeRunner;
         this._running = true;
         this._stepCount = 0;
@@ -31,7 +31,7 @@ export class Maze {
     }
 
     // Public Methods
-    
+
     step(frameCount) {
         if (this._running && (frameCount % 1 == 0)) {
 
@@ -41,15 +41,13 @@ export class Maze {
                 console.log(this._stepCount);
                 console.log(this._agent.memoryTrace);
                 this._running = false;
-
-            // Update every N frames
             } else {
                 // Step the agent one forward so it can perceive and react to the world
                 const action = this._agent.step(this, frameCount);
                 this._agent.location = this._getLocationAfterAction(
                     this._agent.location,
                     action
-                );          
+                );
             }
             this._stepCount++;
         }
@@ -83,15 +81,15 @@ export class Maze {
             case 0:
                 newLocation[0] -= newLocation[0] > 0 ? 1 : 0;
                 break;
-            // Move right
+                // Move right
             case 1:
                 newLocation[0] += newLocation[0] < (boardDim - 1) ? 1 : 0;
                 break;
-            // Move Down
+                // Move Down
             case 2:
                 newLocation[1] -= newLocation[1] > 0 ? 1 : 0;
                 break;
-            // Move Up
+                // Move Up
             case 3:
                 newLocation[1] += newLocation[1] < (boardDim - 1) ? 1 : 0;
                 break;
