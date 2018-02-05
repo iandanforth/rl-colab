@@ -1,0 +1,28 @@
+{
+  "name": "rl-colab",
+  "version": "0.0.1",
+  "description": "Trial and Error Learning Environments",
+  "main": "main.mjs",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "node --experimental-modules tests/test_sum.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iandanforth/rl-colab.git"
+  },
+  "keywords": [
+    "Reinforcement",
+    "Learning",
+    "RL",
+    "DeepRL"
+  ],
+  "author": "Ian Danforth",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/iandanforth/rl-colab/issues"
+  },
+  "homepage": "https://github.com/iandanforth/rl-colab#readme"
+}
