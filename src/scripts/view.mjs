@@ -1,7 +1,9 @@
 import Two from 'https://cdn.rawgit.com/jonobr1/two.js/dev/build/two.module.js';
 
 export class MazeView {
-    constructor(container, maze, config, agentStyles) {
+    constructor(store, container, maze, config, agentStyles) {
+
+        this._store = store;
 
         const params = {
             width: 700,
@@ -38,9 +40,13 @@ export class MazeView {
     // Public API
 
     initialize() {
-        const mazeState = this._maze.state;
-        this._drawMaze(mazeState.mazeData);
-        this._drawReinforcement(mazeState.goalCoords);
+        const state = this._store.getState();
+        const mazeLayout = state.maze.layout;
+
+        this._drawMaze(state.maze.layout);
+
+        this._drawReinforcement(state.maze.goalCoords);
+
         const agentPolicy = this._agent.policy;
         this._drawAgentPolicy(agentPolicy);
         this.update();
@@ -60,7 +66,9 @@ export class MazeView {
         let frameCount = 0;
         if (draw) {
             this._two.bind('update', (frameCount) => {
-                if (this._maze.running) {
+                const state = this._store.getState();
+
+                if (state.maze.running) {
                     this._maze.step(frameCount);
                     this.update();
                 } else if (!once) {

@@ -1,5 +1,6 @@
 export class MazeRunner {
-    constructor(mazeData, location) {
+    constructor(store, mazeData, location) {
+        this._store = store;
         this._origLoc = JSON.parse(JSON.stringify(location));
         this._location = location;
         this.mazeData = mazeData;

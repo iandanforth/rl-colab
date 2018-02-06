@@ -1,11 +1,17 @@
 import { Maze } from './maze.mjs';
 import { MazeRunner } from './mazerunner.mjs';
 import { MazeView } from './view.mjs';
+import Store from './store.mjs';
 
 (function() {
   
-    const container = document.getElementById('draw-shapes');
+    /**
+    * Set up the initial state of the application
+    *
+    */
+    const store = new Store();
 
+    // Maze
     const maze1 = [
         [0,0,0,0,0,0,0,0],
         [0,1,1,1,1,1,1,0],
@@ -28,13 +34,32 @@ import { MazeView } from './view.mjs';
         [0,0,0,0,0,0,0,0]
     ];
 
-
+    // Agent
     const goalCoords = [7, 6]; // [column, row] indexed at 0
-    const initialAgentLocation = [0, 2];
 
+    const defaultMazeState = {
+        layout: maze2,
+        goalCoords: goalCoords
+    };
+
+    store.setState({
+        maze: defaultMazeState
+    });
+
+    const initialAgentLocation = [0, 2];
+    const defaultAgentState = {
+        location: initialAgentLocation
+    };
+
+    store.setState({
+        agent: defaultAgentState
+    });
+
+
+    // Create our objects
     const activeMaze = maze2;
-    const mazeRunner = new MazeRunner(activeMaze, initialAgentLocation);
-    const maze = new Maze(activeMaze, goalCoords, mazeRunner);
+    const mazeRunner = new MazeRunner(store, activeMaze, initialAgentLocation);
+    const maze = new Maze(store, activeMaze, goalCoords, mazeRunner);
 
     const mazeStyles = {
         cellDim: 80,
@@ -55,7 +80,8 @@ import { MazeView } from './view.mjs';
         linewidth: 2
     };
 
-    const mazeView = new MazeView(container, maze, mazeStyles, agentStyles);
+    const container = document.getElementById('draw-shapes');
+    const mazeView = new MazeView(store, container, maze, mazeStyles, agentStyles);
     mazeView.initialize();
 
     const draw = true;

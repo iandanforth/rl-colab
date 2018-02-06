@@ -1,11 +1,13 @@
 export class Maze {
-    constructor(mazeData, goalCoords, mazeRunner) {
+    constructor(store, mazeData, goalCoords, mazeRunner) {
+        this._store = store;
+
         this._mazeData = mazeData; // Array of arrays defining an NxN grid world
         this._goalCoords = goalCoords;
         this._agent = mazeRunner;
+
         this._running = true;
         this._stepCount = 0;
-
     }
     //***********************************************************************//
     // Public API
@@ -66,12 +68,18 @@ export class Maze {
         this._running = true;
         this._agent.reset();
         this._stepCount = 0;
+
+        // STORE
+        this._initState();
     }
 
     //***********************************************************************//
     // Private Methods
 
     _getLocationAfterAction(currentLocation, action) {
+        const state = this._store.getState();
+        const mazeLayout = state.maze.layout;
+
         const boardDim = this._mazeData.length;
         // Deep copy the location so we don't modify it directly
         let newLocation = JSON.parse(JSON.stringify(currentLocation));
@@ -98,7 +106,7 @@ export class Maze {
         }
 
         // Only update agent location into non-wall cells
-        const mazeRow = this._mazeData[newLocation[1]];
+        const mazeRow = mazeLayout[newLocation[1]];
         const mazeCell = mazeRow[newLocation[0]];
         if (mazeCell === 1) {
             return newLocation;
@@ -106,5 +114,4 @@ export class Maze {
 
         return currentLocation;
     }
-
 }

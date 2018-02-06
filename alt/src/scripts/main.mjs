@@ -13,5 +13,4 @@ import CounterDisplay from './counterdisplay.mjs'
 
     counter.start();
 
-
 })();

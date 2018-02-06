@@ -3,8 +3,8 @@ export default class Store {
     * Centralized state store which allows for direct updates to state
     * Does not implement actions from the redux pattern.
     */
-    constructor() {
-        this._state = {};
+    constructor(initialState = {}) {
+        this._state = initialState;
         this._listeners = [];
     }
 
